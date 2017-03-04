@@ -85,10 +85,14 @@ void AGunslingersCharacter::BeginPlay()
 		UE_LOG(LogTemp, Warning, TEXT("Weapon blueprint missing."));
 		return;
 	}
-	else {
-		Weapon = GetWorld()->SpawnActor<AWeapon>(WeaponBlueprint);
-		Weapon->AttachToComponent(GetMesh(), FAttachmentTransformRules(EAttachmentRule::SnapToTarget, true), TEXT("GripPoint")); //Attach gun mesh component to Skeleton, doing it here because the skelton is not yet created in the constructor
-		Weapon->AnimInstance = GetMesh()->GetAnimInstance();
+	Weapon = GetWorld()->SpawnActor<AWeapon>(WeaponBlueprint);
+	Weapon->AttachToComponent(GetMesh(), FAttachmentTransformRules(EAttachmentRule::SnapToTarget, true), TEXT("GripPoint")); //Attach gun mesh component to Skeleton, doing it here because the skelton is not yet created in the constructor
+	Weapon->AnimInstance = GetMesh()->GetAnimInstance();
+
+	//InputComponent->BindTouch(EInputEvent::IE_Pressed, this, &AGunslingersCharacter::TouchStarted);
+	if (EnableTouchscreenMovement(InputComponent) == false)
+	{
+		InputComponent->BindAction("Fire", IE_Pressed, Weapon, &AWeapon::OnFire);
 	}
 }
 
@@ -102,12 +106,6 @@ void AGunslingersCharacter::SetupPlayerInputComponent(class UInputComponent* Pla
 
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
 	PlayerInputComponent->BindAction("Jump", IE_Released, this, &ACharacter::StopJumping);
-
-	//InputComponent->BindTouch(EInputEvent::IE_Pressed, this, &AGunslingersCharacter::TouchStarted);
-	if (EnableTouchscreenMovement(PlayerInputComponent) == false)
-	{
-		PlayerInputComponent->BindAction("Fire", IE_Pressed, Weapon, &AWeapon::OnFire);
-	}
 
 	PlayerInputComponent->BindAction("ResetVR", IE_Pressed, this, &AGunslingersCharacter::OnResetVR);
 

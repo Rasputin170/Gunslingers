@@ -17,12 +17,12 @@ AWeapon::AWeapon()
 	Weapon->SetOnlyOwnerSee(false);			// only the owning player will see this mesh
 	Weapon->bCastDynamicShadow = false;
 	Weapon->CastShadow = false;
-	// Weapon->SetupAttachment(Mesh1P, TEXT("GripPoint"));
 	Weapon->SetupAttachment(RootComponent);
 
 	Muzzle = CreateDefaultSubobject<USceneComponent>(TEXT("Muzzle"));
 	Muzzle->SetupAttachment(Weapon);
-	Muzzle->SetRelativeLocation(FVector(0.f, 48.4f, -10.6f));
+	Muzzle->SetRelativeLocation(FVector(0.f, 55.f, 11.f));
+	Muzzle->SetRelativeRotation(FRotator(0.f, 0.f, 90.f));
 }
 
 // Called when the game starts or when spawned
@@ -41,6 +41,7 @@ void AWeapon::Tick( float DeltaTime )
 
 void AWeapon::OnFire()
 {
+	UE_LOG(LogTemp, Warning, TEXT("Fire!"))
 	// try and fire a projectile
 	if (ProjectileClass != NULL)
 	{
@@ -71,7 +72,7 @@ void AWeapon::OnFire()
 		// Get the animation object for the arms mesh
 		if (AnimInstance != NULL)
 		{
-			AnimInstance->Montage_Play(FireAnimation, 1.f);
+			// AnimInstance->Montage_Play(FireAnimation, 1.f);
 		}
 	}
 }
