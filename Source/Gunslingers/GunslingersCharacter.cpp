@@ -22,19 +22,19 @@ AGunslingersCharacter::AGunslingersCharacter()
 	BaseLookUpRate = 45.f;
 
 	// Create a CameraComponent	
-	FirstPersonCameraComponent = CreateDefaultSubobject<UCameraComponent>(TEXT("FirstPersonCamera"));
-	FirstPersonCameraComponent->SetupAttachment(GetCapsuleComponent());
-	FirstPersonCameraComponent->RelativeLocation = FVector(-39.56f, 1.75f, 64.f); // Position the camera
-	FirstPersonCameraComponent->bUsePawnControlRotation = true;
+	// FirstPersonCameraComponent = CreateDefaultSubobject<UCameraComponent>(TEXT("FirstPersonCamera"));
+	// FirstPersonCameraComponent->SetupAttachment(GetCapsuleComponent());
+	// FirstPersonCameraComponent->RelativeLocation = FVector(-39.56f, 1.75f, 64.f); // Position the camera
+	// FirstPersonCameraComponent->bUsePawnControlRotation = true;
 
 	// Create a mesh component that will be used when being viewed from a '1st person' view (when controlling this pawn)
-	Mesh1P = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("CharacterMesh1P"));
-	Mesh1P->SetOnlyOwnerSee(false);
-	Mesh1P->SetupAttachment(FirstPersonCameraComponent);
-	Mesh1P->bCastDynamicShadow = false;
-	Mesh1P->CastShadow = false;
-	Mesh1P->RelativeRotation = FRotator(0.f, 0.f, 0.f);
-	Mesh1P->RelativeLocation = FVector(0.f, 0.f, 0.f);
+	// Mesh1P = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("CharacterMesh1P"));
+	// Mesh1P->SetOnlyOwnerSee(false);
+	// Mesh1P->SetupAttachment(FirstPersonCameraComponent);
+	// Mesh1P->bCastDynamicShadow = false;
+	// Mesh1P->CastShadow = false;
+	// Mesh1P->RelativeRotation = FRotator(0.f, 0.f, 0.f);
+	// Mesh1P->RelativeLocation = FVector(0.f, 0.f, 0.f);
 
 	// Note: The ProjectileClass and the skeletal mesh/anim blueprints for Mesh1P, Weapon, and VR_Weapon 
 	// are set in the derived blueprint asset named MyCharacter to avoid direct content references in C++.
@@ -69,29 +69,27 @@ void AGunslingersCharacter::BeginPlay()
 	// Call the base class  
 	Super::BeginPlay();
 
-	// Attach gun mesh component to Skeleton, doing it here because the skeleton is not yet created in the constructor
-	// Weapon->AttachToComponent(Mesh1P, FAttachmentTransformRules(EAttachmentRule::SnapToTarget, true), TEXT("GripPoint"));
-
 	// Show or hide the two versions of the gun based on whether or not we're using motion controllers.
 	if (bUsingMotionControllers)
 	{
 		VR_Weapon->SetHiddenInGame(false, true);
-		Mesh1P->SetHiddenInGame(true, true);
+		GetMesh()->SetHiddenInGame(true, true);
 	}
 	else
 	{
 		VR_Weapon->SetHiddenInGame(true, true);
-		Mesh1P->SetHiddenInGame(false, true);
+		GetMesh()->SetHiddenInGame(false, true);
 	}
 
 	if (WeaponBlueprint == NULL) {
 		UE_LOG(LogTemp, Warning, TEXT("Weapon blueprint missing."));
 		return;
 	}
-	Weapon = GetWorld()->SpawnActor<AWeapon>(WeaponBlueprint);
-	Weapon->AttachToComponent(Mesh1P, FAttachmentTransformRules(EAttachmentRule::SnapToTarget, true), TEXT("GripPoint")); //Attach gun mesh component to Skeleton, doing it here because the skelton is not yet created in the constructor
-	Weapon->AnimInstance = Mesh1P->GetAnimInstance();
-
+	else {
+		Weapon = GetWorld()->SpawnActor<AWeapon>(WeaponBlueprint);
+		Weapon->AttachToComponent(GetMesh(), FAttachmentTransformRules(EAttachmentRule::SnapToTarget, true), TEXT("GripPoint")); //Attach gun mesh component to Skeleton, doing it here because the skelton is not yet created in the constructor
+		Weapon->AnimInstance = GetMesh()->GetAnimInstance();
+	}
 }
 
 //////////////////////////////////////////////////////////////////////////

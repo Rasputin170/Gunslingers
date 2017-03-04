@@ -14,7 +14,7 @@ AWeapon::AWeapon()
 
 	// Create a gun mesh component
 	Weapon = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Weapon"));
-	Weapon->SetOnlyOwnerSee(true);			// only the owning player will see this mesh
+	Weapon->SetOnlyOwnerSee(false);			// only the owning player will see this mesh
 	Weapon->bCastDynamicShadow = false;
 	Weapon->CastShadow = false;
 	// Weapon->SetupAttachment(Mesh1P, TEXT("GripPoint"));
