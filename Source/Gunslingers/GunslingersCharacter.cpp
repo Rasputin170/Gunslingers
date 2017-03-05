@@ -21,24 +21,6 @@ AGunslingersCharacter::AGunslingersCharacter()
 	BaseTurnRate = 45.f;
 	BaseLookUpRate = 45.f;
 
-	// Create a CameraComponent	
-	// FirstPersonCameraComponent = CreateDefaultSubobject<UCameraComponent>(TEXT("FirstPersonCamera"));
-	// FirstPersonCameraComponent->SetupAttachment(GetCapsuleComponent());
-	// FirstPersonCameraComponent->RelativeLocation = FVector(-39.56f, 1.75f, 64.f); // Position the camera
-	// FirstPersonCameraComponent->bUsePawnControlRotation = true;
-
-	// Create a mesh component that will be used when being viewed from a '1st person' view (when controlling this pawn)
-	// Mesh1P = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("CharacterMesh1P"));
-	// Mesh1P->SetOnlyOwnerSee(false);
-	// Mesh1P->SetupAttachment(FirstPersonCameraComponent);
-	// Mesh1P->bCastDynamicShadow = false;
-	// Mesh1P->CastShadow = false;
-	// Mesh1P->RelativeRotation = FRotator(0.f, 0.f, 0.f);
-	// Mesh1P->RelativeLocation = FVector(0.f, 0.f, 0.f);
-
-	// Note: The ProjectileClass and the skeletal mesh/anim blueprints for Mesh1P, Weapon, and VR_Weapon 
-	// are set in the derived blueprint asset named MyCharacter to avoid direct content references in C++.
-
 	// Create VR Controllers.
 	R_MotionController = CreateDefaultSubobject<UMotionControllerComponent>(TEXT("R_MotionController"));
 	R_MotionController->Hand = EControllerHand::Right;
@@ -104,8 +86,8 @@ void AGunslingersCharacter::SetupPlayerInputComponent(class UInputComponent* Pla
 	// set up gameplay key bindings
 	check(PlayerInputComponent);
 
-	// PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
-	// PlayerInputComponent->BindAction("Jump", IE_Released, this, &ACharacter::StopJumping);
+	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
+	PlayerInputComponent->BindAction("Jump", IE_Released, this, &ACharacter::StopJumping);
 
 	PlayerInputComponent->BindAction("ResetVR", IE_Pressed, this, &AGunslingersCharacter::OnResetVR);
 
