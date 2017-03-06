@@ -10,7 +10,34 @@ class AGunslingersGameMode : public AGameModeBase
 
 public:
 	AGunslingersGameMode();
+
+	virtual void BeginPlay() override;
+
+	void SpawnLevelTiles();
+
+	UPROPERTY(EditDefaultsOnly, Category = "Game")
+	int32 NumberOfPlayers = 4;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Level Setup")
+	TSubclassOf<class ATile> TileBlueprint;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Level Setup")
+	float TileOffset = 2000.;
+
+private:
+	int32 NumberOfTiles = 12;
+
+	TArray<FVector> AllocatedTransforms;
+
+	bool IsXDirection;
+	bool IsPositive;
+	bool IsAllocated;
+	
+	FRotator TileRotation;
+	FVector TileTransform;
+	FVector OffsetLocation(bool IsXDirection, bool IsPositive);
+	
+	void SetNewTransform();
+	void CheckAllocation();
+
 };
-
-
-
