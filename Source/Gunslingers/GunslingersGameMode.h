@@ -13,19 +13,26 @@ public:
 
 	virtual void BeginPlay() override;
 
-	void SpawnLevelTiles();
-
 	UPROPERTY(EditDefaultsOnly, Category = "Game")
-	int32 NumberOfPlayers = 4;
+	int32 NumberOfPlayers = 8;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Level Setup")
 	TSubclassOf<class ATile> TileBlueprint;
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Level Setup")
+	TSubclassOf<class ATile> WallBlueprint;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Level Setup")
 	float TileOffset = 2000.;
+
+protected:
+
+	void SpawnLevelTiles();
+	void SpawnLevelWalls();
 
 private:
 	int32 NumberOfTiles = 12;
+	int32 RotationOffset = 0;
 
 	TArray<FVector> AllocatedTransforms;
 
@@ -35,9 +42,10 @@ private:
 	
 	FRotator TileRotation;
 	FVector TileTransform;
-	FVector OffsetLocation(bool IsXDirection, bool IsPositive);
+	FVector OffsetLocation(bool DirectionX, bool Positive);
 	
-	void SetNewTransform();
+	void SetRandomTransform();
 	void CheckAllocation();
 
+	UWorld* const World = GetWorld();
 };

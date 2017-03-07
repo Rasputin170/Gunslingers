@@ -21,7 +21,7 @@ AWeapon::AWeapon()
 
 	Muzzle = CreateDefaultSubobject<USceneComponent>(TEXT("Muzzle"));
 	Muzzle->SetupAttachment(Weapon);
-	Muzzle->SetRelativeLocation(FVector(0.f, 55.f, 11.f));
+	Muzzle->SetRelativeLocation(FVector(0.f, 56.f, 11.f));
 	Muzzle->SetRelativeRotation(FRotator(0.f, 0.f, 90.f));
 }
 

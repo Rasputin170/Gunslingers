@@ -22,31 +22,66 @@ void AGunslingersGameMode::BeginPlay()
 	// Call the base class  
 	Super::BeginPlay();
 
-	SpawnLevelTiles();
+	if (World != NULL)
+	{
+		SpawnLevelTiles();
+		SpawnLevelWalls();
+	}
 }
 
 void AGunslingersGameMode::SpawnLevelTiles()
 {
-	UWorld* const World = GetWorld();
-	if (World != NULL)
-	{
-		for (int32 i = 0; i < NumberOfTiles; i++) {
+	NumberOfTiles = 3 * NumberOfPlayers;
+
+	for (int32 i = 0; i < NumberOfTiles; i++) {
 			World->SpawnActor<ATile>(TileBlueprint, TileTransform, TileRotation);
 			AllocatedTransforms.Add(TileTransform);
-			SetNewTransform();
-		}
+			SetRandomTransform();
 	}
 }
 
-void AGunslingersGameMode::SetNewTransform()
+void AGunslingersGameMode::SpawnLevelWalls()
+{
+	for (FVector AllocatedTile : AllocatedTransforms) {
+
+		TileTransform = AllocatedTile;
+		OffsetLocation(true, true);
+		CheckAllocation();
+		if (IsAllocated == false) { World->SpawnActor<ATile>(WallBlueprint, TileTransform, TileRotation); }
+		else { UE_LOG(LogTemp, Warning, TEXT("%f, %f, %f is allocated."), TileTransform.X, TileTransform.Y, TileTransform.Z); }
+
+		TileTransform = AllocatedTile;
+		OffsetLocation(true, false);
+		CheckAllocation();
+		if (IsAllocated == false) { World->SpawnActor<ATile>(WallBlueprint, TileTransform, TileRotation); }
+		else { UE_LOG(LogTemp, Warning, TEXT("%f, %f, %f is allocated."), TileTransform.X, TileTransform.Y, TileTransform.Z); }
+
+		TileTransform = AllocatedTile;
+		OffsetLocation(false, true);
+		CheckAllocation();
+		if (IsAllocated == false) { World->SpawnActor<ATile>(WallBlueprint, TileTransform, TileRotation); }
+		else { UE_LOG(LogTemp, Warning, TEXT("%f, %f, %f is allocated."), TileTransform.X, TileTransform.Y, TileTransform.Z); }
+
+		TileTransform = AllocatedTile;
+		OffsetLocation(false, false);
+		CheckAllocation();
+		if (IsAllocated == false) { World->SpawnActor<ATile>(WallBlueprint, TileTransform, TileRotation); }
+		else { UE_LOG(LogTemp, Warning, TEXT("%f, %f, %f is allocated."), TileTransform.X, TileTransform.Y, TileTransform.Z); }
+	}
+	return;
+}
+
+void AGunslingersGameMode::SetRandomTransform()
 {
 	IsXDirection = FMath::RandBool();
 	IsPositive = FMath::RandBool();
+	RotationOffset = FMath::RandRange(0, 3);
+
+	TileRotation.Yaw = 90 * RotationOffset;
 
 	OffsetLocation(IsXDirection, IsPositive);
 	
 	do {
-		IsAllocated = false; 
 		CheckAllocation();
 		if (IsAllocated == true) { OffsetLocation(IsXDirection, IsPositive); }
 	} while (IsAllocated == true);
@@ -54,18 +89,18 @@ void AGunslingersGameMode::SetNewTransform()
 	return;
 }
 
-FVector AGunslingersGameMode::OffsetLocation(bool IsXDirection, bool IsPositive)
+FVector AGunslingersGameMode::OffsetLocation(bool DirectionX, bool Positive)
 {
-	if (IsXDirection == true && IsPositive == true) {
+	if (DirectionX == true && Positive == true) {
 		TileTransform.X += TileOffset;
 	}
-	else if (IsXDirection == true && IsPositive == false) {
+	else if (DirectionX == true && Positive == false) {
 		TileTransform.X -= TileOffset;
 	}
-	else if (IsXDirection == false && IsPositive == true) {
+	else if (DirectionX == false && Positive == true) {
 		TileTransform.Y += TileOffset;
 	}
-	else if (IsXDirection == false && IsPositive == false) {
+	else if (DirectionX == false && Positive == false) {
 		TileTransform.Y -= TileOffset;
 	}
 
@@ -74,6 +109,7 @@ FVector AGunslingersGameMode::OffsetLocation(bool IsXDirection, bool IsPositive)
 
 void AGunslingersGameMode::CheckAllocation()
 {
+	IsAllocated = false;
 	for (FVector Allocated : AllocatedTransforms) {
 		if (TileTransform == Allocated) {
 			IsAllocated = true;
@@ -81,5 +117,6 @@ void AGunslingersGameMode::CheckAllocation()
 			return;
 		}
 	}
+
 	return;
 }
