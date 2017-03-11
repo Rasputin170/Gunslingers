@@ -4,7 +4,7 @@
 #include "GunslingersGameMode.h"
 #include "GunslingersHUD.h"
 #include "World/Tile.h"
-#include "GunslingersCharacter.h"
+#include "Characters/PlayerCharacter.h"
 
 AGunslingersGameMode::AGunslingersGameMode()
 	: Super()

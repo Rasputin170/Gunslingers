@@ -23,7 +23,7 @@ public:
 	TSubclassOf<class ATile> WallBlueprint;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Level Setup")
-	float TileOffset = 2000.;
+	float TileOffset = 4000.;
 
 protected:
 

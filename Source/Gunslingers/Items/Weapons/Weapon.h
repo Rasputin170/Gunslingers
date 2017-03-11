@@ -3,45 +3,327 @@
 #pragma once
 
 #include "GameFramework/Actor.h"
+#include "../../Characters/PlayerCharacter.h"
 #include "Weapon.generated.h"
 
-UCLASS()
-class GUNSLINGERS_API AWeapon : public AActor
+UENUM()
+enum class EWeaponState
+{
+	Idle,
+	Firing,
+	Equipping,
+	Reloading
+};
+
+/**
+*
+*/
+UCLASS(ABSTRACT, Blueprintable)
+class AWeapon : public AActor
 {
 	GENERATED_BODY()
-	
-	/** Gun mesh: 1st person view (seen only by self) */
+
+		virtual void PostInitializeComponents() override;
+
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+
+	float GetEquipStartedTime() const;
+
+	float GetEquipDuration() const;
+
+	/** last time when this weapon was switched to */
+	float EquipStartedTime;
+
+	/** how much time weapon needs to be equipped */
+	float EquipDuration;
+
+	bool bIsEquipped;
+
+	bool bPendingEquip;
+
+	FTimerHandle TimerHandle_HandleFiring;
+
+	FTimerHandle EquipFinishedTimerHandle;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
+		float ShotsPerMinute;
+
+protected:
+
+	AWeapon(const FObjectInitializer& ObjectInitializer);
+
+	/* The character socket to store this item at. */
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
+		EInventorySlot StorageSlot;
+
+	/** pawn owner */
+	UPROPERTY(Transient, ReplicatedUsing = OnRep_MyPawn)
+		class APlayerCharacter* MyPawn;
+
+	/** weapon mesh: 3rd person view */
 	UPROPERTY(VisibleDefaultsOnly, Category = Mesh)
-	class USkeletalMeshComponent* Weapon;
+		USkeletalMeshComponent* Mesh;
 
-	/** Location on gun mesh where projectiles should spawn. */
-	UPROPERTY(VisibleDefaultsOnly, Category = Mesh)
-	class USceneComponent* Muzzle;
+	UFUNCTION()
+		void OnRep_MyPawn();
 
-public:	
-	// Sets default values for this actor's properties
-	AWeapon();
+	/** detaches weapon mesh from pawn */
+	void DetachMeshFromPawn();
 
-	// Called when the game starts or when spawned
-	virtual void BeginPlay() override;
-	
-	// Called every frame
-	virtual void Tick( float DeltaSeconds ) override;
+	virtual void OnEquipFinished();
 
-	/** Projectile class to spawn */
-	UPROPERTY(EditDefaultsOnly, Category = Projectile)
-	TSubclassOf<class AGunslingersProjectile> ProjectileClass;
+	bool IsEquipped() const;
 
-	/** Sound to play each time we fire */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
-	class USoundBase* FireSound;
+	bool IsAttachedToPawn() const;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
-	class UAnimInstance* AnimInstance;
+public:
 
-	/** Fires a projectile. */
-	void OnFire();
+	/** get weapon mesh (needs pawn owner to determine variant) */
+	UFUNCTION(BlueprintCallable, Category = "Weapon")
+		USkeletalMeshComponent* GetWeaponMesh() const;
 
-	bool Firing;
-	
+	virtual void OnUnEquip();
+
+	void OnEquipWeapon(bool bPlayAnimation);
+
+	/* Set the weapon's owning pawn */
+	void SetOwningPawn(APlayerCharacter* NewOwner);
+
+	/* Get pawn owner */
+	UFUNCTION(BlueprintCallable, Category = "Weapon")
+		class APlayerCharacter* GetPawnOwner() const;
+
+	virtual void OnEnterInventory(APlayerCharacter* NewOwner);
+
+	virtual void OnLeaveInventory();
+
+	FORCEINLINE EInventorySlot GetStorageSlot()
+	{
+		return StorageSlot;
+	}
+
+	/************************************************************************/
+	/* Fire & Damage Handling                                               */
+	/************************************************************************/
+
+public:
+
+	void StartFire();
+
+	void StopFire();
+
+	EWeaponState GetCurrentState() const;
+
+	/* You can assign default values to function parameters, these are then optional to specify/override when calling the function. */
+	void AttachMeshToPawn(EInventorySlot Slot = EInventorySlot::Equipped);
+
+protected:
+
+	bool CanFire() const;
+
+	FVector GetAdjustedAim() const;
+
+	FVector GetCameraDamageStartLocation(const FVector& AimDir) const;
+
+	FHitResult WeaponTrace(const FVector& TraceFrom, const FVector& TraceTo) const;
+
+	/* With PURE_VIRTUAL we skip implementing the function in Weapon.cpp and can do this in WeaponInstant.cpp / SFlashlight.cpp instead */
+	virtual void FireWeapon() PURE_VIRTUAL(AWeapon::FireWeapon, );
+
+private:
+
+	void SetWeaponState(EWeaponState NewState);
+
+	void DetermineWeaponState();
+
+	virtual void HandleFiring();
+
+	UFUNCTION(Reliable, Server, WithValidation)
+		void ServerStartFire();
+
+	void ServerStartFire_Implementation();
+
+	bool ServerStartFire_Validate();
+
+	UFUNCTION(Reliable, Server, WithValidation)
+		void ServerStopFire();
+
+	void ServerStopFire_Implementation();
+
+	bool ServerStopFire_Validate();
+
+	UFUNCTION(Reliable, Server, WithValidation)
+		void ServerHandleFiring();
+
+	void ServerHandleFiring_Implementation();
+
+	bool ServerHandleFiring_Validate();
+
+	void OnBurstStarted();
+
+	void OnBurstFinished();
+
+	bool bWantsToFire;
+
+	EWeaponState CurrentState;
+
+	bool bRefiring;
+
+	float LastFireTime;
+
+	/* Time between shots for repeating fire */
+	float TimeBetweenShots;
+
+	/************************************************************************/
+	/* Simulation & FX                                                      */
+	/************************************************************************/
+
+private:
+
+	UFUNCTION()
+		void OnRep_BurstCounter();
+
+	UPROPERTY(EditDefaultsOnly, Category = "Sounds")
+		USoundBase* FireSound;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Sounds")
+		USoundBase* EquipSound;
+
+	UPROPERTY(EditDefaultsOnly)
+		UParticleSystem* MuzzleFX;
+
+	UPROPERTY(EditDefaultsOnly)
+		UAnimMontage* EquipAnim;
+
+	UPROPERTY(EditDefaultsOnly)
+		UAnimMontage* FireAnim;
+
+	UPROPERTY(Transient)
+		UParticleSystemComponent* MuzzlePSC;
+
+	UPROPERTY(EditDefaultsOnly)
+		FName MuzzleAttachPoint;
+
+	bool bPlayingFireAnim;
+
+	UPROPERTY(Transient, ReplicatedUsing = OnRep_BurstCounter)
+		int32 BurstCounter;
+
+protected:
+
+	virtual void SimulateWeaponFire();
+
+	virtual void StopSimulatingWeaponFire();
+
+	FVector GetMuzzleLocation() const;
+
+	FVector GetMuzzleDirection() const;
+
+	UAudioComponent* PlayWeaponSound(USoundBase* SoundToPlay);
+
+	float PlayWeaponAnimation(UAnimMontage* Animation, float InPlayRate = 1.f, FName StartSectionName = NAME_None);
+
+	void StopWeaponAnimation(UAnimMontage* Animation);
+
+	/************************************************************************/
+	/* Ammo & Reloading                                                     */
+	/************************************************************************/
+
+private:
+
+	UPROPERTY(EditDefaultsOnly, Category = "Sounds")
+		USoundBase* OutOfAmmoSound;
+
+	FTimerHandle TimerHandle_ReloadWeapon;
+
+	FTimerHandle TimerHandle_StopReload;
+
+protected:
+
+	/* Time to assign on reload when no animation is found */
+	UPROPERTY(EditDefaultsOnly, Category = "Animation")
+		float NoAnimReloadDuration;
+
+	/* Time to assign on equip when no animation is found */
+	UPROPERTY(EditDefaultsOnly, Category = "Animation")
+		float NoEquipAnimDuration;
+
+	UPROPERTY(Transient, ReplicatedUsing = OnRep_Reload)
+		bool bPendingReload;
+
+	void UseAmmo();
+
+	UPROPERTY(Transient, Replicated)
+		int32 CurrentAmmo;
+
+	UPROPERTY(Transient, Replicated)
+		int32 CurrentAmmoInClip;
+
+	/* Weapon ammo on spawn */
+	UPROPERTY(EditDefaultsOnly)
+		int32 StartAmmo;
+
+	UPROPERTY(EditDefaultsOnly)
+		int32 MaxAmmo;
+
+	UPROPERTY(EditDefaultsOnly)
+		int32 MaxAmmoPerClip;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Sounds")
+		USoundBase* ReloadSound;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Animation")
+		UAnimMontage* ReloadAnim;
+
+	virtual void ReloadWeapon();
+
+	/* Trigger reload from server */
+	UFUNCTION(Reliable, Client)
+		void ClientStartReload();
+
+	void ClientStartReload_Implementation();
+
+	/* Is weapon and character currently capable of starting a reload */
+	bool CanReload();
+
+	UFUNCTION()
+		void OnRep_Reload();
+
+	UFUNCTION(reliable, server, WithValidation)
+		void ServerStartReload();
+
+	void ServerStartReload_Implementation();
+
+	bool ServerStartReload_Validate();
+
+	UFUNCTION(reliable, server, WithValidation)
+		void ServerStopReload();
+
+	void ServerStopReload_Implementation();
+
+	bool ServerStopReload_Validate();
+
+public:
+
+	virtual void StartReload(bool bFromReplication = false);
+
+	virtual void StopSimulateReload();
+
+	/* Give ammo to weapon and return the amount that was not 'consumed' beyond the max count */
+	int32 GiveAmmo(int32 AddAmount);
+
+	/* Set a new total amount of ammo of weapon */
+	void SetAmmoCount(int32 NewTotalAmount);
+
+	UFUNCTION(BlueprintCallable, Category = "Ammo")
+		int32 GetCurrentAmmo() const;
+
+	UFUNCTION(BlueprintCallable, Category = "Ammo")
+		int32 GetCurrentAmmoInClip() const;
+
+	UFUNCTION(BlueprintCallable, Category = "Ammo")
+		int32 GetMaxAmmoPerClip() const;
+
+	UFUNCTION(BlueprintCallable, Category = "Ammo")
+		int32 GetMaxAmmo() const;
 };
